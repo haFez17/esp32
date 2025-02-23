@@ -1,4 +1,4 @@
-async function fetchTranslation()fetchTranslation() {
+async function fetchTranslation(){
     try {
         const response = await fetch('/data/');
         const data = await response.json();
@@ -11,3 +11,5 @@ async function fetchTranslation()fetchTranslation() {
         console.error('Ошибка при получении данных:', error);
     }
 }
+
+window.onload = fetchTranslation;
