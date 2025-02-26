@@ -10,6 +10,7 @@ from spellchecker import SpellChecker
 import nltk
 from pydantic import BaseModel
 from typing import Optional
+from fastapi.templating import Jinja2Templates
 
 nltk.download('punkt', quiet=True)
 
@@ -17,8 +18,8 @@ app = FastAPI()
 translator = Translator()
 spell = SpellChecker()
 
+templates = Jinja2Templates(directory="templates") #Jinja надо создать папку templates
 
-# Pydantic models for request validation
 class TranslationRequest(BaseModel):
     text: str
     target_language: str
@@ -30,7 +31,6 @@ class SaveTranslationRequest(BaseModel):
     language: str
 
 
-# Process image and extract text without translation
 @app.post("/process_image/")
 async def process_image(file: UploadFile = File(...)):
     try:
@@ -40,10 +40,8 @@ async def process_image(file: UploadFile = File(...)):
         # image = image.convert("L")  # Convert to grayscale
         # image = image.point(lambda x: 0 if x < 140 else 255)  # Binarize the image
 
-        # Extract text from image
         text = pytesseract.image_to_string(image, lang="eng")
 
-        # Correct spelling
         corrected_text = correct_text(text)
 
         return {"extracted_text": corrected_text}
@@ -112,14 +110,12 @@ def correct_text(text):
     return " ".join(corrected_words)
 
 
-# Static files
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
-# Route handlers
 @app.get("/")
 async def read_index():
-    return RedirectResponse(url="/static/index.html")
+    return RedirectResponse(url="/static/home.html")
 
 
 @app.get("/camera")
@@ -139,7 +135,6 @@ async def get_data():
 
 if __name__ == '__main__':
     import uvicorn
-
     uvicorn.run("server:app", host='0.0.0.0', port=5000, reload=True)
 
     # http://127.0.0.1:5000/
