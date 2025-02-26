@@ -21,23 +21,21 @@ templates = Jinja2Templates(directory="templates")
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
-# ✅ Переадресация на регистрацию при входе на сайт
+#Переадресация на регистрацию при входе на сайт
 @app.get("/")
 async def home():
     return RedirectResponse(url="/register/")
 
-
-# ✅ Страница регистрации
+# Регистрация
 @app.get("/register/")
 async def register_page(request: Request):
     return templates.TemplateResponse("register.html", {"request": request, "title": "Регистрация"})
 
 
-# ✅ Обработка регистрации
 @app.post("/register/")
 async def register(request: Request, username: str = Form(...), password: str = Form(...), mac_address: str = Form(...)):
     if database.save_user(username, password, mac_address):
-        return RedirectResponse(url="/login/", status_code=303)  # ✅ После регистрации перекидывает на логин
+        return RedirectResponse(url="/login/", status_code=303)
     return templates.TemplateResponse("register.html", {
         "request": request,
         "title": "Ошибка",
@@ -45,13 +43,11 @@ async def register(request: Request, username: str = Form(...), password: str = 
     })
 
 
-# ✅ Страница логина
 @app.get("/login/")
 async def login_page(request: Request):
     return templates.TemplateResponse("login.html", {"request": request, "title": "Вход"})
 
 
-# ✅ Обработка логина
 @app.post("/login/")
 async def login(request: Request, username: str = Form(...), password: str = Form(...)):
     if database.authenticate_user(username, password):
@@ -63,18 +59,16 @@ async def login(request: Request, username: str = Form(...), password: str = For
     })
 
 
-# ✅ Страница перевода (будет выводить оригинальный и переведённый текст, связанный с ESP-32)
-@app.get("/translate/")
+@app.get("/translation/")
 async def translate_page(request: Request):
     data = list(database.collection.find({}, {"_id": 0}))  # Получаем последние переводы
-    return templates.TemplateResponse("translate.html", {
+    return templates.TemplateResponse("translaion.html", {
         "request": request,
         "title": "Перевод",
         "translations": data
     })
 
 
-# ✅ Обработка загрузки изображения и перевода
 @app.post("/upload/")
 async def upload_images(file: UploadFile = File(...), target_language: str = "en"):
     image = Image.open(file.file)

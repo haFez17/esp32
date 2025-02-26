@@ -1,16 +1,12 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Переводчик</title>
-    <link rel="stylesheet" href="/static/style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-</head>
+{% extends "layout.html" %}
+
+{% block content %}
+<form action="/translation/" method="post">
+
 <body>
     <nav class="navbar">
         <div class="nav-container">
-            <a href="/" class="nav-item active">
+            <a href="/server/static" class="nav-item active">
                 <i class="fas fa-home"></i>
                 <span>Главная</span>
             </a>
@@ -91,11 +87,13 @@
             <div id="status-message" class="status-message"></div>
         </div>
     </div>
+{% endblock %}
 
-    <footer>
-        <p>© 2025 Система перевода текста</p>
-    </footer>
+<footer>
+    <p>© 2025 Система перевода текста</p>
+</footer>
 
+{% block scripts %}
     <script>
         const originalText = document.getElementById('original-text');
         const translatedText = document.getElementById('translated-text');
@@ -188,7 +186,7 @@
         clearBtn.addEventListener('click', function() {
             originalText.value = '';
             translatedText.value = '';
-            statusMessage.innerHTML = '';
+            statusMessage.innerHTML = '';  // Очистить сообщение статуса
         });
 
         // Save translation to database
@@ -247,5 +245,7 @@
             }
         }
     </script>
+{% endblock %}
 </body>
 </html>
+</form>
