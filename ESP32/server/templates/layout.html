@@ -3,21 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ title }}</title>
+    <title>{% block title %}Шаблон{% endblock %}</title>
     <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
-    <nav>
-        <ul>
-            <li><a href="/translation/">Переводчик</a></li>
-            <li><a href="/camera/"></a></li>
-            <li><a href="/register/">Регистрация</a></li>
-            <li><a href="/login/">Вход</a></li>
-        </ul>
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="/" class="nav-item"><i class="fas fa-home"></i> Главная</a>
+            <a href="/translation/" class="nav-item"><i class="fas fa-language"></i> Переводчик</a>
+            <a href="/camera/" class="nav-item"><i class="fas fa-camera"></i> Камера</a>
+            <a href="/register/" class="nav-item"><i class="fas fa-user-plus"></i> Регистрация</a>
+            <a href="/login/" class="nav-item"><i class="fas fa-sign-in-alt"></i> Вход</a>
+        </div>
     </nav>
 
-    <div id="content">
-        {% block content %}{% endblock %}
-    </div>
+    {% block content %}
+    {% endblock %}
+
+    <footer>
+        <p>&copy; 2025 Система перевода текста</p>
+    </footer>
+
+    {% block scripts %}
+    {% endblock %}
 </body>
 </html>
