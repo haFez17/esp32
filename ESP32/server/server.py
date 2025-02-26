@@ -123,9 +123,9 @@ async def camera_page():
     return RedirectResponse(url="/static/camera.html")
 
 
-@app.get("/translate")
+@app.get("/translation")
 async def translate_page():
-    return RedirectResponse(url="/static/translate.html")
+    return RedirectResponse(url="/static/translation.html")
 
 
 @app.get("/data/")
