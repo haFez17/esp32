@@ -1,143 +1,125 @@
 {% extends "layout.html" %}
 
+{% block title %}Камера - Система перевода{% endblock %}
+
+{% block header_title %}Захват изображения для перевода{% endblock %}
+{% block header_description %}Сделайте фото текста для распознавания и перевода{% endblock %}
+
 {% block content %}
-<form action="/camera/" method="post">
-
-<body>
-    <nav class="navbar">
-        <div class="nav-container">
-            <a href="/server/static" class="nav-item">
-                <i class="fas fa-home"></i>
-                <span>Главная</span>
-            </a>
-            <a href="/camera" class="nav-item active">
-                <i class="fas fa-camera"></i>
-                <span>Камера</span>
-            </a>
-            <a href="/translate" class="nav-item">
-                <i class="fas fa-language"></i>
-                <span>Перевод</span>
-            </a>
-        </div>
-    </nav>
-
-    <div class="container">
-        <div class="header">
-            <h1>Камера</h1>
-            <p>Распознавание текста с камеры</p>
+<div class="card">
+    <div class="camera-container">
+        <div class="camera-view">
+            <video id="video" autoplay playsinline></video>
+            <canvas id="canvas" style="display:none;"></canvas>
         </div>
 
-        <div class="card">
-            <div class="camera-container">
-                <video id="video" width="100%" height="auto" autoplay></video>
-                <canvas id="canvas" width="640" height="480"></canvas>
-            </div>
-
-            <div class="button-group">
-                <button class="btn primary" id="start-btn">
-                    <i class="fas fa-play"></i> Начать
-                </button>
-                <button class="btn secondary" id="stop-btn" disabled>
-                    <i class="fas fa-stop"></i> Остановить
-                </button>
-                <button class="btn accent" id="capture-btn" disabled>
-                    <i class="fas fa-camera"></i> Сделать снимок
-                </button>
-            </div>
-
-            <div id="status-message" class="status-message"></div>
-
-            <div class="extracted-text">
-                <h2>Распознанный текст</h2>
-                <textarea id="extracted-text" readonly placeholder="Текст появится здесь"></textarea>
+        <div class="image-preview">
+            <div id="preview-container">
+                <div class="placeholder-preview">
+                    <i class="fas fa-image"></i>
+                    <p>Предпросмотр изображения</p>
+                </div>
+                <img id="photo-preview" style="display:none;" alt="Preview">
             </div>
         </div>
     </div>
-{% endblock %}
 
-<footer>
-    <p>© 2025 Камера для распознавания текста</p>
-</footer>
+    <div class="button-group">
+        <button class="btn primary" id="capture-btn">
+            <i class="fas fa-camera"></i> Сделать фото
+        </button>
+
+        <button class="btn secondary" id="process-btn" disabled>
+            <i class="fas fa-cogs"></i> Распознать текст
+        </button>
+    </div>
+
+    <div id="status-message" class="status-message"></div>
+</div>
+{% endblock %}
 
 {% block scripts %}
-    <script>
-        const startBtn = document.getElementById('start-btn');
-        const stopBtn = document.getElementById('stop-btn');
-        const captureBtn = document.getElementById('capture-btn');
-        const video = document.getElementById('video');
-        const canvas = document.getElementById('canvas');
-        const ctx = canvas.getContext('2d');
-        const extractedTextArea = document.getElementById('extracted-text');
-        const statusMessage = document.getElementById('status-message');
+<script>
+    // Camera functionality
+    let imageBlob = null;
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const context = canvas.getContext('2d');
+    const photoPreview = document.getElementById('photo-preview');
+    const captureBtn = document.getElementById('capture-btn');
+    const processBtn = document.getElementById('process-btn');
+    const statusMessage = document.getElementById('status-message');
 
-        let stream;
-
-        // Start the camera stream
-        startBtn.addEventListener('click', async function() {
-            try {
-                statusMessage.innerHTML = '<div class="processing"><i class="fas fa-spinner fa-spin"></i> Инициализация камеры...</div>';
-                stream = await navigator.mediaDevices.getUserMedia({ video: true });
-                video.srcObject = stream;
-
-                startBtn.disabled = true;
-                stopBtn.disabled = false;
-                captureBtn.disabled = false;
-                statusMessage.innerHTML = '<div class="success"><i class="fas fa-check-circle"></i> Камера успешно запущена</div>';
-            } catch (error) {
-                console.error('Ошибка при доступе к камере:', error);
-                statusMessage.innerHTML = '<div class="error"><i class="fas fa-exclamation-circle"></i> Не удалось получить доступ к камере</div>';
-            }
-        });
-
-        // Stop the camera stream
-        stopBtn.addEventListener('click', function() {
-            if (stream) {
-                const tracks = stream.getTracks();
-                tracks.forEach(track => track.stop());
-            }
-
-            video.srcObject = null;
-
-            startBtn.disabled = false;
-            stopBtn.disabled = true;
-            captureBtn.disabled = true;
-            statusMessage.innerHTML = '<div class="info"><i class="fas fa-info-circle"></i> Камера остановлена</div>';
-        });
-
-        // Capture the image from the camera
-        captureBtn.addEventListener('click', function() {
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-            const imageData = canvas.toDataURL('image/png');
-
-            statusMessage.innerHTML = '<div class="processing"><i class="fas fa-spinner fa-spin"></i> Обработка изображения...</div>';
-
-            // Send image to server for text extraction
-            fetch('/extract_text/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ image: imageData }),
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.extracted_text) {
-                    extractedTextArea.value = data.extracted_text;
-                    statusMessage.innerHTML = '<div class="success"><i class="fas fa-check-circle"></i> Текст успешно распознан</div>';
-
-                    // Save the extracted text to sessionStorage for use in the translate page
-                    sessionStorage.setItem('extractedText', data.extracted_text);
-                } else {
-                    statusMessage.innerHTML = '<div class="error"><i class="fas fa-exclamation-circle"></i> Не удалось распознать текст</div>';
-                }
-            })
-            .catch(error => {
-                console.error('Ошибка при извлечении текста:', error);
-                statusMessage.innerHTML = '<div class="error"><i class="fas fa-exclamation-circle"></i> Ошибка при обработке изображения</div>';
+    // Access the camera
+    async function initCamera() {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: 'environment' }
             });
-        });
-    </script>
+            video.srcObject = stream;
+        } catch (err) {
+            console.error('Error accessing camera:', err);
+            statusMessage.innerHTML = '<div class="error"><i class="fas fa-exclamation-circle"></i> Не удалось получить доступ к камере</div>';
+        }
+    }
+
+    // Take a photo
+    captureBtn.addEventListener('click', function() {
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        // Convert to blob for upload
+        canvas.toBlob(function(blob) {
+            imageBlob = blob;
+            const imageUrl = URL.createObjectURL(blob);
+            photoPreview.src = imageUrl;
+            photoPreview.style.display = 'block';
+            document.querySelector('.placeholder-preview').style.display = 'none';
+            processBtn.disabled = false;
+        }, 'image/jpeg');
+    });
+
+    // Process the image - extract text and go to main page
+    processBtn.addEventListener('click', async function() {
+        if (!imageBlob) return;
+
+        const formData = new FormData();
+        formData.append('file', imageBlob, 'image.jpg');
+        formData.append('target_language', 'en'); // Default language, will be changed on main page
+
+        try {
+            processBtn.disabled = true;
+            statusMessage.innerHTML = '<div class="processing"><i class="fas fa-spinner fa-spin"></i> Распознавание текста...</div>';
+
+            const response = await fetch('/process_image/', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!response.ok) throw new Error('Ошибка обработки');
+
+            const result = await response.json();
+
+            // Set the session storage with the extracted text
+            sessionStorage.setItem('extractedText', result.extracted_text);
+
+            // Success message
+            statusMessage.innerHTML = '<div class="success"><i class="fas fa-check-circle"></i> Текст успешно распознан! Переход на главную страницу...</div>';
+
+            // Redirect to main page after a short delay
+            setTimeout(() => {
+                window.location.href = '/';
+            }, 1500);
+
+        } catch (error) {
+            console.error('Error processing image:', error);
+            statusMessage.innerHTML = '<div class="error"><i class="fas fa-exclamation-circle"></i> Ошибка при обработке изображения</div>';
+            processBtn.disabled = false;
+        }
+    });
+
+    // Initialize camera on page load
+    document.addEventListener('DOMContentLoaded', initCamera);
+</script>
 {% endblock %}
-</body>
-</html>
-</form>

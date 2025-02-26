@@ -1,6 +1,6 @@
 {% extends "layout.html" %}
 
-{% block title %}Перевод - Система перевода{% endblock %}
+{% block title %}Главная - Переводчик{% endblock %}
 
 {% block content %}
 <div class="card">
@@ -84,10 +84,8 @@
         if (extractedText) {
             originalText.value = extractedText;
             statusMessage.innerHTML = '<div class="info"><i class="fas fa-info-circle"></i> Текст с камеры загружен. Выберите язык и нажмите "Перевести"</div>';
-            // Clear the session storage
             sessionStorage.removeItem('extractedText');
         } else if (currentSource === 'esp32') {
-            // Try to fetch data from ESP-32
             fetchLatestData();
         }
     });
@@ -119,7 +117,6 @@
         });
     });
 
-    // Translate the text
     translateBtn.addEventListener('click', async function() {
         const text = originalText.value.trim();
         if (!text) {
@@ -154,14 +151,12 @@
         }
     });
 
-    // Clear both text areas
     clearBtn.addEventListener('click', function() {
         originalText.value = '';
         translatedText.value = '';
         statusMessage.innerHTML = '';
     });
 
-    // Save translation to database
     saveBtn.addEventListener('click', async function() {
         const original = originalText.value.trim();
         const translated = translatedText.value.trim();
