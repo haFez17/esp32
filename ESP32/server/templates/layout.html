@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Система перевода текста{% endblock %}</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="/" class="nav-item {% if active_page == 'home' %}active{% endif %}">
+                <i class="fas fa-home"></i>
+                <span>Главная</span>
+            </a>
+            <a href="/camera" class="nav-item {% if active_page == 'camera' %}active{% endif %}">
+                <i class="fas fa-camera"></i>
+                <span>Камера</span>
+            </a>
+            <a href="/translation" class="nav-item {% if active_page == 'translate' %}active{% endif %}">
+                <i class="fas fa-language"></i>
+                <span>Перевод</span>
+            </a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="header">
+            <h1>{% block header_title %}Система перевода текста{% endblock %}</h1>
+            <p>{% block header_subtitle %}Распознайте и переведите текст с вашей камеры{% endblock %}</p>
+        </div>
+
+        <div class="card">
+            {% block content %}{% endblock %}
+        </div>
+    </div>
+
+    <footer>
+        <p>© 2025 Система перевода текста</p>
+    </footer>
+
+    {% block scripts %}{% endblock %}
+</body>
+</html>

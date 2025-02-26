@@ -11,6 +11,7 @@ import nltk
 from pydantic import BaseModel
 from typing import Optional
 from fastapi.templating import Jinja2Templates
+from fastapi import Request
 
 nltk.download('punkt', quiet=True)
 
@@ -114,18 +115,17 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
 @app.get("/")
-async def read_index():
-    return RedirectResponse(url="/static/home.html")
-
+async def read_index(request: Request):
+    return templates.TemplateResponse("home.html", {"request": request})
 
 @app.get("/camera")
-async def camera_page():
-    return RedirectResponse(url="/static/camera.html")
-
+async def camera_page(request: Request):
+    return templates.TemplateResponse("camera.html", {"request": request})
 
 @app.get("/translation")
-async def translate_page():
-    return RedirectResponse(url="/static/translation.html")
+async def translate_page(request: Request):
+    return templates.TemplateResponse("translation.html", {"request": request})
+
 
 
 @app.get("/data/")
@@ -135,6 +135,6 @@ async def get_data():
 
 if __name__ == '__main__':
     import uvicorn
-    uvicorn.run("server:app", host='0.0.0.0', port=5000, reload=True)
+    uvicorn.run("server:app", host='0.0.0.0', port=9090, reload=True)
 
-    # http://127.0.0.1:5000/
+# http://127.0.0.1:9090/
