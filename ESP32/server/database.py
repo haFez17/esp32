@@ -1,59 +1,57 @@
-import json
 from passlib.hash import bcrypt
 from pymongo import MongoClient
+import json
 
 # Подключение к MongoDB Atlas
-uri = "mongodb+srv://Anastasia_team:HLnmCzLQI3ne1wY4@cluster0.bwyk7.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+uri = "mongodb+srv://Anastasia_team:HLnmCzLQI3ne1wY4@cluster0.bwyk7.mongodb.net/?retryWrites=true&w=majority"
 client = MongoClient(uri)
 
-# Проверяем подключение
-try:
-    client.admin.command("ping")
-    print("Успешное подключение к MongoDB Atlas!")
-except Exception as e:
-    print(f"Ошибка подключения: {e}")
+# Выбор базы данных
+db = client["translation_system"]
 
-# Используем базу данных
-db = client["translations_db"]
-collection = db["translations"]
+# Выбор коллекций
+translations_collection = db["translations"]
 users_collection = db["users"]
 
-with open("texts.json", "r", encoding="utf-8") as file:
-    data = json.load(file)  # Загружаем JSON
-
-    if isinstance(data, list):  # Если в файле массив JSON-объектов
-        collection.insert_many(data)
-    else:  # Если один объект
-        collection.insert_one(data)
 
 def save_user(username, password, mac_address):
-    """Сохраняет нового пользователя в базе данных"""
-    if users_collection.find_one({"$or": [{"username": username}, {"mac_address": mac_address}]}):
-        return None  # Логин или MAC-адрес уже зарегистрирован
+    """Сохранение пользователя в базе данных"""
+    if users_collection.find_one({"username": username}) or users_collection.find_one({"mac_address": mac_address}):
+        return False  # Логин или MAC-адрес уже зарегистрирован
 
     hashed_password = bcrypt.hash(password)
-    result = users_collection.insert_one({
+    users_collection.insert_one({
         "username": username,
         "password": hashed_password,
         "mac_address": mac_address
     })
-    return str(result.inserted_id)  # Возвращаем ID нового пользователя
+    return True
 
 
 def authenticate_user(username, password):
-    """Аутентифицирует пользователя"""
+    """Проверка логина и пароля"""
     user = users_collection.find_one({"username": username})
     if user and bcrypt.verify(password, user["password"]):
-        return user  # Возвращаем объект пользователя
-    return None
+        return True
+    return False
 
 
-def save_data(original, translated, lang, mac_address):
-    """Сохраняет переведённый текст, привязывая его к устройству"""
+def save_data(original, translated, lang):
+    """Сохранение перевода в базе данных"""
     data = {
         "original_text": original,
         "translated_text": translated,
-        "language": lang,
-        "mac_address": mac_address  # Привязываем перевод к конкретному устройству
+        "language": lang
     }
-    collection.insert_one(data)
+    translations_collection.insert_one(data)
+
+
+def export_data_to_json():
+    """Экспорт переводов в JSON-файл"""
+    import json
+    data = list(translations_collection.find({}, {"_id": 0}))  # Убираем MongoDB `_id`
+
+    with open("translations.json", "w", encoding="utf-8") as file:
+        json.dump(data, file, ensure_ascii=False, indent=4)
+
+    print("Данные успешно экспортированы в translations.json")
