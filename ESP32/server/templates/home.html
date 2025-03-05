@@ -4,212 +4,33 @@
 
 {% block content %}
 <div class="card">
-    <div class="source-control">
-        <div class="source-buttons">
-            <button class="tab-btn active" data-source="camera">
-                <i class="fas fa-camera"></i> С камеры
-            </button>
-            <button class="tab-btn" data-source="esp32">
-                <i class="fas fa-microchip"></i> С ESP-32
-            </button>
-            <button class="tab-btn" data-source="manual">
-                <i class="fas fa-keyboard"></i> Ручной ввод
-            </button>
-        </div>
-    </div>
+    <h2>Введите текст для перевода</h2>
+    <textarea id="manual-text" placeholder="Введите текст"></textarea>
 
-    <div class="language-control">
-        <div class="language-selector">
-            <label for="target-language">Перевести на:</label>
-            <select id="target-language">
-                <option value="ru">Русский</option>
-                <option value="en">Английский</option>
-                <option value="de">Немецкий</option>
-                <option value="fr">Французский</option>
-                <option value="es">Испанский</option>
-                <option value="zh-cn">Китайский</option>
-                <option value="ja">Японский</option>
-                <option value="it">Итальянский</option>
-                <option value="ro">Румынский</option>
-            </select>
-        </div>
-    </div>
+    <label for="target-language">Выберите язык:</label>
+    <select id="target-language">
+        <option value="en">Английский</option>
+        <option value="ru">Русский</option>
+        <option value="de">Немецкий</option>
+    </select>
 
-    <div class="translation-container">
-        <div class="text-box">
-            <h2><i class="fas fa-file-alt"></i> Оригинальный текст</h2>
-            <textarea id="original-text" placeholder="Здесь появится распознанный текст или введите его самостоятельно"></textarea>
-        </div>
-
-        <div class="text-box">
-            <h2><i class="fas fa-language"></i> Переведенный текст</h2>
-            <textarea id="translated-text" placeholder="Здесь появится перевод текста" readonly></textarea>
-        </div>
-    </div>
-
-    <div class="button-group">
-        <button class="btn primary" id="translate-btn">
-            <i class="fas fa-language"></i> Перевести
-        </button>
-
-        <button class="btn secondary" id="clear-btn">
-            <i class="fas fa-trash"></i> Очистить
-        </button>
-
-        <button class="btn accent" id="save-btn">
-            <i class="fas fa-save"></i> Сохранить перевод
-        </button>
-    </div>
-
-    <div id="status-message" class="status-message"></div>
+    <button onclick="translateText()">Перевести</button>
+    <p>Переведенный текст:</p>
+    <p id="translated-text"></p>
 </div>
-{% endblock %}
 
-{% block scripts %}
 <script>
-    const originalText = document.getElementById('original-text');
-    const translatedText = document.getElementById('translated-text');
-    const translateBtn = document.getElementById('translate-btn');
-    const clearBtn = document.getElementById('clear-btn');
-    const saveBtn = document.getElementById('save-btn');
-    const statusMessage = document.getElementById('status-message');
-    const targetLanguage = document.getElementById('target-language');
-    const tabButtons = document.querySelectorAll('.tab-btn');
+async function translateText() {
+    const text = document.getElementById("manual-text").value;
+    const lang = document.getElementById("target-language").value;
 
-    let currentSource = 'camera';
-
-    // Check for text from camera on page load
-    document.addEventListener('DOMContentLoaded', function() {
-        const extractedText = sessionStorage.getItem('extractedText');
-        if (extractedText) {
-            originalText.value = extractedText;
-            statusMessage.innerHTML = '<div class="info"><i class="fas fa-info-circle"></i> Текст с камеры загружен. Выберите язык и нажмите "Перевести"</div>';
-            sessionStorage.removeItem('extractedText');
-        } else if (currentSource === 'esp32') {
-            fetchLatestData();
-        }
+    const response = await fetch("/upload/", {
+        method: "POST",
+        body: new URLSearchParams({ "file": text, "target_language": lang })
     });
 
-    // Toggle between data sources
-    tabButtons.forEach(button => {
-        button.addEventListener('click', function() {
-            tabButtons.forEach(btn => btn.classList.remove('active'));
-            this.classList.add('active');
-            currentSource = this.dataset.source;
-
-            if (currentSource === 'esp32') {
-                fetchLatestData();
-            } else if (currentSource === 'manual') {
-                originalText.value = '';
-                translatedText.value = '';
-                originalText.readOnly = false;
-                statusMessage.innerHTML = '<div class="info"><i class="fas fa-info-circle"></i> Режим ручного ввода. Введите текст для перевода</div>';
-            } else if (currentSource === 'camera') {
-                originalText.readOnly = true;
-                const extractedText = sessionStorage.getItem('extractedText');
-                if (extractedText) {
-                    originalText.value = extractedText;
-                } else {
-                    originalText.value = '';
-                    statusMessage.innerHTML = '<div class="info"><i class="fas fa-info-circle"></i> Для получения текста нажмите на вкладку "Камера"</div>';
-                }
-            }
-        });
-    });
-
-    translateBtn.addEventListener('click', async function() {
-        const text = originalText.value.trim();
-        if (!text) {
-            statusMessage.innerHTML = '<div class="error"><i class="fas fa-exclamation-circle"></i> Введите текст для перевода</div>';
-            return;
-        }
-
-        const language = targetLanguage.value;
-
-        try {
-            statusMessage.innerHTML = '<div class="processing"><i class="fas fa-spinner fa-spin"></i> Выполняется перевод...</div>';
-
-            const response = await fetch('/translate_text/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    text: text,
-                    target_language: language
-                }),
-            });
-
-            if (!response.ok) throw new Error('Ошибка перевода');
-
-            const result = await response.json();
-            translatedText.value = result.translated_text;
-            statusMessage.innerHTML = '<div class="success"><i class="fas fa-check-circle"></i> Перевод выполнен успешно!</div>';
-        } catch (error) {
-            console.error('Error translating text:', error);
-            statusMessage.innerHTML = '<div class="error"><i class="fas fa-exclamation-circle"></i> Ошибка при переводе текста</div>';
-        }
-    });
-
-    clearBtn.addEventListener('click', function() {
-        originalText.value = '';
-        translatedText.value = '';
-        statusMessage.innerHTML = '';
-    });
-
-    saveBtn.addEventListener('click', async function() {
-        const original = originalText.value.trim();
-        const translated = translatedText.value.trim();
-
-        if (!original || !translated) {
-            statusMessage.innerHTML = '<div class="error"><i class="fas fa-exclamation-circle"></i> Нет текста для сохранения</div>';
-            return;
-        }
-
-        try {
-            statusMessage.innerHTML = '<div class="processing"><i class="fas fa-spinner fa-spin"></i> Сохранение...</div>';
-
-            const response = await fetch('/save_translation/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    original_text: original,
-                    translated_text: translated,
-                    language: targetLanguage.value
-                }),
-            });
-
-            if (!response.ok) throw new Error('Ошибка сохранения');
-
-            statusMessage.innerHTML = '<div class="success"><i class="fas fa-check-circle"></i> Перевод успешно сохранен!</div>';
-        } catch (error) {
-            console.error('Error saving translation:', error);
-            statusMessage.innerHTML = '<div class="error"><i class="fas fa-exclamation-circle"></i> Ошибка при сохранении перевода</div>';
-        }
-    });
-
-    // Fetch the latest data from ESP-32
-    async function fetchLatestData() {
-        try {
-            statusMessage.innerHTML = '<div class="processing"><i class="fas fa-spinner fa-spin"></i> Получение данных с ESP-32...</div>';
-
-            const response = await fetch('/data/');
-            const data = await response.json();
-
-            if (data.length > 0) {
-                const lastEntry = data[data.length - 1];
-                originalText.value = lastEntry.original_text;
-                translatedText.value = '';
-                statusMessage.innerHTML = '<div class="success"><i class="fas fa-check-circle"></i> Данные с ESP-32 получены</div>';
-            } else {
-                statusMessage.innerHTML = '<div class="warning"><i class="fas fa-exclamation-triangle"></i> Нет данных с ESP-32</div>';
-            }
-        } catch (error) {
-            console.error('Error fetching data:', error);
-            statusMessage.innerHTML = '<div class="error"><i class="fas fa-exclamation-circle"></i> Ошибка при получении данных с ESP-32</div>';
-        }
-    }
+    const data = await response.json();
+    document.getElementById("translated-text").innerText = data.translated_text;
+}
 </script>
 {% endblock %}

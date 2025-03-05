@@ -3,29 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Шаблон{% endblock %}</title>
+    <title>{% block title %}Система перевода{% endblock %}</title>
     <link rel="stylesheet" href="/static/style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script>
+        function checkAuth() {
+            const user = document.cookie.includes("user=");
+            if (!user) {
+                document.querySelectorAll(".auth-nav").forEach(el => el.style.display = "none");
+            }
+        }
+        window.onload = checkAuth;
+    </script>
 </head>
 <body>
-    <nav class="navbar">
-        <div class="nav-container">
-            <a href="/" class="nav-item"><i class="fas fa-home"></i> Главная</a>
-            <a href="/translation/" class="nav-item"><i class="fas fa-language"></i> Переводчик</a>
-            <a href="/camera/" class="nav-item"><i class="fas fa-camera"></i> Камера</a>
-            <a href="/register/" class="nav-item"><i class="fas fa-user-plus"></i> Регистрация</a>
-            <a href="/login/" class="nav-item"><i class="fas fa-sign-in-alt"></i> Вход</a>
-        </div>
+    <nav>
+        <a href="/register/">Регистрация</a>
+        <a href="/login/">Вход</a>
+        <a href="/home/" class="auth-nav">Главная</a>
+        <a href="/translation/" class="auth-nav">Переводчик</a>
+        <a href="/camera/" class="auth-nav">Камера</a>
     </nav>
 
-    {% block content %}
-    {% endblock %}
-
-    <footer>
-        <p>&copy; 2025 Система перевода текста</p>
-    </footer>
-
-    {% block scripts %}
-    {% endblock %}
+    <div id="content">
+        {% block content %}{% endblock %}
+    </div>
 </body>
 </html>
