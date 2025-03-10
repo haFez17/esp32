@@ -3,7 +3,8 @@ from pymongo import MongoClient
 import json
 
 # Подключение к MongoDB Atlas
-uri = "mongodb://atlas-sql-67c82b607ceec523052aa440-bwyk7.a.query.mongodb.net/translation_system?ssl=true&authSource=admin"
+#uri = "mongodb://atlas-sql-67c82b607ceec523052aa440-bwyk7.a.query.mongodb.net/translation_system?ssl=true&authSource=admin"
+uri = "mongodb+srv://Anastasia_team:omar2003@cluster0.bwyk7.mongodb.net/"
 client = MongoClient(uri)
 
 # Выбираем базу данных
