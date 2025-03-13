@@ -1,5 +1,5 @@
 import json
-from fastapi import FastAPI, UploadFile, File, HTTPException, Form, Depends
+from fastapi import FastAPI, UploadFile, File, HTTPException, Form, Request, Depends
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 import pytesseract
@@ -9,7 +9,6 @@ import database
 from starlette.responses import RedirectResponse
 from spellchecker import SpellChecker
 from langdetect import detect
-from fastapi import Request
 import nltk
 
 nltk.download('punkt')
@@ -30,9 +29,7 @@ async def get_user_session(request: Request):
 @app.get("/")
 async def redirect_to_register(request: Request):
     user = await get_user_session(request)
-    if user:
-        return RedirectResponse(url="/home/")
-    return RedirectResponse(url="/register/")
+    return RedirectResponse(url="/home/" if user else "/register/")
 
 
 @app.get("/register/")
@@ -43,8 +40,7 @@ async def register_page(request: Request):
 @app.post("/register/")
 async def register(request: Request, username: str = Form(...), password: str = Form(...), mac_address: str = Form(...)):
     if database.save_user(username, password, mac_address):
-        response = RedirectResponse(url="/login/", status_code=303)
-        return response
+        return RedirectResponse(url="/login/", status_code=303)
     return templates.TemplateResponse("register.html", {
         "request": request,
         "title": "Ошибка",
@@ -106,10 +102,28 @@ async def upload_images(file: UploadFile = File(...), target_language: str = For
     return {"original_text": corrected_text, "translated_text": translated_text, "detected_language": detected_lang}
 
 
+@app.post("/translate_text/")
+async def translate_text(data: dict):
+    text = data.get("text", "").strip()
+    target_language = data.get("target_language", "en")
+
+    if not text:
+        raise HTTPException(status_code=400, detail="Текст не должен быть пустым")
+
+    detected_lang = detect(text)
+    translated_text = translator.translate(text, src=detected_lang, dest=target_language).text
+    return {"translated_text": translated_text}
+
+
 def correct_text(text):
     words = text.split()
     corrected_words = [spell.correction(word) or word for word in words]
     return " ".join(corrected_words)
+
+
+if __name__ == '__main__':
+    import uvicorn
+    uvicorn.run("server:app", host='0.0.0.0', port=8080, reload=True)
 
 
 
